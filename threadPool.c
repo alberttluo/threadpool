@@ -1,5 +1,6 @@
 #include "threadPool.h"
 #include <stdio.h>
+#include <assert.h>
 
 #define DEBUG (1)
 
@@ -117,15 +118,16 @@ static threadPoolTask_t *taskQueuePoll(taskQueue_t *taskQueue) {
   }
 
   queueNode_t *front = taskQueue->head;
+  threadPoolTask_t *task = front->task;
 
-  if (front == taskQueue->tail) {
+  taskQueue->head = front->next;
+
+  if (taskQueue->head == NULL) {
     taskQueue->tail = NULL;
   }
 
-  taskQueue->head = front->next;
-  front->next = NULL;
-  
-  return front->task;
+  free(front);
+  return task;
 }
 
 static void taskQueueInsert(taskQueue_t *taskQueue, threadPoolTask_t *task) {
@@ -171,8 +173,11 @@ threadPool_t *threadPoolInit(size_t numThreads) {
 
   for (size_t i = 0; i < numThreads; i++) {
     DEBUG_PRINT("Creating thread %zu.\n", i);
-    workers[i] = xmalloc(sizeof(threadWorker_t));
-    pthread_create(&workers[i], NULL, threadPoolWorkerLoop, (void *) tp);
+    int rc = pthread_create(&workers[i], NULL, threadPoolWorkerLoop, (void *) tp);
+    if (rc != 0) {
+      fprintf(stderr, "pthread_create failed (%d)\n", rc);
+      exit(EXIT_FAILURE);
+    }
   }
 
   tp->workers = workers;
@@ -220,7 +225,7 @@ void threadPoolFree(threadPool_t *tp) {
   pthread_mutex_unlock(&tp->threadPoolLock);
 
   for (size_t i = 0; i < tp->numThreads; i++) {
-    DEBUG_PRINT("Joining thread %zu .\n", i);
+    DEBUG_PRINT("Joining thread %zu.\n", i);
     pthread_join(tp->workers[i], NULL);
   }
 
