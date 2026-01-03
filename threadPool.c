@@ -82,8 +82,12 @@ static void *threadPoolWorkerLoop(void *args) {
     pthread_mutex_unlock(&tp->threadPoolLock);
 
     if (task != NULL) {
-      (task->func)(task->args);
+      void *result = (task->func)(task->args);
       taskFree(task);
+
+      if (task->onComplete != NULL) {
+        (task->onComplete)(result, task->resultObj);
+      }
     }
   }
 
@@ -184,7 +188,9 @@ threadPool_t *threadPoolInit(size_t numThreads) {
   return tp;
 }
 
-void threadPoolAddTask(threadPool_t *tp, task_func func, void *args, argsFree_func argsFree) {
+void threadPoolAddTask(threadPool_t *tp, task_func func, void *args, argsFree_func argsFree,
+                       taskCompleteCB_func onComplete, void *resultObj) 
+{
   if (tp == NULL || func == NULL) {
     return;
   }
@@ -193,6 +199,8 @@ void threadPoolAddTask(threadPool_t *tp, task_func func, void *args, argsFree_fu
   task->func = func;
   task->args = args;
   task->argsFree = argsFree;
+  task->onComplete = onComplete;
+  task->resultObj = resultObj;
 
   pthread_mutex_lock(&tp->threadPoolLock);
   if (tp->state == DESTROYING) {

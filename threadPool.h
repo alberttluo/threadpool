@@ -9,11 +9,14 @@ typedef pthread_t threadWorker_t;
 
 typedef void (*argsFree_func)(void *);
 typedef void *(*task_func)(void *);
+typedef void (*taskCompleteCB_func)(void *result, void *resultObj);
 
 typedef struct {
-  task_func     func;
-  void         *args;
-  argsFree_func argsFree;
+  task_func           func;
+  void               *args;
+  argsFree_func       argsFree;
+  taskCompleteCB_func onComplete; 
+  void               *resultObj;
 } threadPoolTask_t;
 
 typedef struct queueNode_struct queueNode_t;
@@ -49,7 +52,8 @@ typedef struct {
 } threadPoolWorkerLoop_t;
 
 threadPool_t *threadPoolInit(size_t numThreads);
-void          threadPoolAddTask(threadPool_t *tp, task_func func, void *args, argsFree_func argsFree);
+void          threadPoolAddTask(threadPool_t *tp, task_func func, void *args, argsFree_func argsFree,
+                                taskCompleteCB_func onComplete, void *resultObj);
 void          threadPoolFree(threadPool_t *tp);
 
 #endif
