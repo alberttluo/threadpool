@@ -8,12 +8,20 @@
 typedef struct {
   int num1;
   int num2;
+  int *num3;
 } dummy_t;
+
+static void dummyFree(void *ptr) {
+  dummy_t *d = (dummy_t *) ptr;
+  free(d->num3);
+
+  free(d);
+}
 
 static void *dummyTask(void *args) {
   dummy_t *dummyArgs = (dummy_t *)args;
 
-  return (void *)(intptr_t)(dummyArgs->num1 + dummyArgs->num2);
+  return (void *)(intptr_t)(dummyArgs->num1 + dummyArgs->num2 * (*dummyArgs->num3));
 }
 
 /*
@@ -40,9 +48,9 @@ static void initTest(size_t maxThreads) {
 }
 
 /*
-* Test that tasks are done successfully.
+* Test that dummy tasks are done successfully.
 */
-static void taskTest(size_t numTasks) {
+static void dummyTaskTest(size_t numTasks) {
   printf("Running task testing...\n\n");
 
   threadPool_t *tp = threadPoolInit(MAX_THREADS);
@@ -54,15 +62,17 @@ static void taskTest(size_t numTasks) {
 
     args->num1 = i;
     args->num2 = i + 1;
-    threadPoolAddTask(tp, dummyTask, (void *)args, free);
+    args->num3 = malloc(sizeof(int));
+    *args->num3 = i + 2; 
+    threadPoolAddTask(tp, dummyTask, (void *)args, dummyFree);
   }
 
   threadPoolFree(tp);
 }
 
 static void runTests() {
-  initTest(1UL);
-  taskTest(2UL);
+  initTest(MAX_THREADS);
+  dummyTaskTest(100UL);
 
   printf("All tests passed!");
   exit(EXIT_SUCCESS);

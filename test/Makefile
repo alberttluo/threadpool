@@ -5,6 +5,7 @@ SRC := threadPool_test.c ../threadPool.c
 .PHONY: clean
 
 test:
+	rm -rf test;
 	$(GCC) $(FLAGS) $(SRC) -o test
 
 memcheck:
