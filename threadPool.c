@@ -50,7 +50,6 @@ static bool taskQueueEmpty(taskQueue_t *taskQueue);
 // Free function for tasks.
 static void taskFree(threadPoolTask_t *task) {
   if (task == NULL || task->argsFree == NULL) {
-    free(task);
     return;
   }
 
