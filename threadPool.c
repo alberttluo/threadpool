@@ -83,10 +83,13 @@ static void *threadPoolWorkerLoop(void *args) {
 
     if (task != NULL) {
       void *result = (task->func)(task->args);
+      void *resultObj = task->resultObj;
+      taskCompleteCB_func onComplete = task->onComplete;
+
       taskFree(task);
 
-      if (task->onComplete != NULL) {
-        (task->onComplete)(result, task->resultObj);
+      if (onComplete != NULL) {
+        (onComplete)(result, resultObj);
       }
     }
   }
