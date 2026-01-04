@@ -13,8 +13,10 @@ test-rb:
 	$(GCC) $(FLAGS) $(SRC)xmalloc.c $(SRC)ringBuffer.c ringBuffer_test.c -o rb-test
 
 memcheck:
-	$(GCC) $(FLAGS) $(SRC) -o tp-test;
-	valgrind ./test --leak-check=full -s
+	$(GCC) $(FLAGS) $(SRC)*.c threadPool_test.c -o tp-test;
+	$(GCC) $(FLAGS) $(SRC)xmalloc.c $(SRC)ringBuffer.c ringBuffer_test.c -o rb-test;
+	valgrind ./tp-test 100 100 --leak-check=full -s;
+	valgrind ./rb-test --leak-check=full -s;
 
 clean:
 	rm -rf tp-test rb-test;
