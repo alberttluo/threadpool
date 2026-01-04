@@ -26,6 +26,7 @@ static void taskFree(threadPoolTask_t *task) {
 * Thread pool worker loop.
 */
 static void *threadPoolWorkerLoop(void *args) {
+  DEBUG_ASSERT(args != NULL);
   threadPool_t *tp = (threadPool_t *)args;
 
   while (true) {
@@ -84,6 +85,7 @@ static void taskQueueFree(taskQueue_t *taskQueue) {
 }
 
 static threadPoolTask_t *taskQueuePoll(taskQueue_t *taskQueue) {
+  DEBUG_ASSERT(taskQueue != NULL);
   if (taskQueue->head == NULL) {
     return NULL;
   }
@@ -102,6 +104,8 @@ static threadPoolTask_t *taskQueuePoll(taskQueue_t *taskQueue) {
 }
 
 static void taskQueueInsert(taskQueue_t *taskQueue, threadPoolTask_t *task) {
+  DEBUG_ASSERT(taskQueue != NULL);
+  DEBUG_ASSERT(task != NULL);
   queueNode_t *taskNode = xmalloc(sizeof(queueNode_t));
   taskNode->task = task;
   taskNode->next = NULL;
@@ -118,6 +122,7 @@ static void taskQueueInsert(taskQueue_t *taskQueue, threadPoolTask_t *task) {
 }
 
 static bool taskQueueEmpty(taskQueue_t *taskQueue) {
+  DEBUG_ASSERT(taskQueue != NULL);
   return (taskQueue->head == NULL && taskQueue->tail == NULL);
 }
 
