@@ -1,4 +1,4 @@
-#include "../threadPool.h"
+#include "../inc/threadPool.h"
 #include <stdio.h>
 #include <assert.h>
 #include <stdint.h>
