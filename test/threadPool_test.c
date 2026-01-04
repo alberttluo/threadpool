@@ -21,6 +21,11 @@ typedef struct {
   pthread_cond_t done;
 } doneContext_t;
 
+typedef struct {
+  size_t *slot;
+  doneContext_t *ctx;
+} cbArg_t;
+
 static void dummyFree(void *ptr) {
   dummy_t *d = (dummy_t *) ptr;
   free(d->num3);
@@ -29,7 +34,7 @@ static void dummyFree(void *ptr) {
 }
 
 static void dummyCB(void *result, void *resultObj) {
-  struct {size_t *slot; doneContext_t *ctx;} *d = resultObj;
+  cbArg_t *d = (cbArg_t *) resultObj;
   size_t *r = (size_t *)result;
 
   *(d->slot) = *r;
@@ -70,6 +75,8 @@ static void initTest(size_t maxThreads) {
   }
 
   free(tpArray);
+
+  printf("Passed all initialization tests!\n");
 }
 
 /*
@@ -100,14 +107,15 @@ static void dummyTaskTest(size_t numTasks) {
     args->num3 = malloc(sizeof(int));
     *args->num3 = i + 2; 
 
-    struct {size_t *slot; doneContext_t *d;} *cbArg = malloc(sizeof(*cbArg));
+    cbArg_t *cbArg = malloc(sizeof(cbArg_t));
     cbArg->slot = &array[i];
-    cbArg->d = &ctx;
+    cbArg->ctx = &ctx;
     threadPoolAddTask(tp, dummyTask, (void *)args, dummyFree, dummyCB, cbArg);
   }
 
   pthread_mutex_lock(&ctx.lock);
   while (ctx.remaining != 0) {
+    printf("Waiting for condition in task testing...\n");
     pthread_cond_wait(&ctx.done, &ctx.lock);
   }
   pthread_mutex_unlock(&ctx.lock);
@@ -138,7 +146,10 @@ int main(int argc, char *argv[]) {
   char *endptr;
 
   size_t threads = strtoul(argv[1], &endptr, 10);
+  assert(*endptr == '\0');
+
   size_t tasks = strtoul(argv[2], &endptr, 10);
+  assert(*endptr == '\0');
 
   runTests(threads, tasks); 
 
