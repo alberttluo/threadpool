@@ -11,6 +11,12 @@ typedef struct {
   int *num3;
 } dummy_t;
 
+typedef struct {
+  size_t remaining;
+  pthread_mutex_t lock;
+  pthread_cond_t done;
+} doneContext_t;
+
 static void dummyFree(void *ptr) {
   dummy_t *d = (dummy_t *) ptr;
   free(d->num3);
@@ -18,10 +24,25 @@ static void dummyFree(void *ptr) {
   free(d);
 }
 
+static void dummyCB(void *result, void *resultObj) {
+  struct {size_t *slot; doneContext_t *ctx;} *d = resultObj;
+  size_t *r = (size_t *)result;
+
+  *(d->slot) = *r;
+
+  pthread_mutex_lock(&d->ctx->lock);
+  if (--d->ctx->remaining == 0) pthread_cond_signal(&d->ctx->done);
+  pthread_mutex_unlock(&d->ctx->lock);
+
+  free(d);
+  free(r);
+}
+
 static void *dummyTask(void *args) {
   dummy_t *dummyArgs = (dummy_t *)args;
-
-  return (void *)(intptr_t)(dummyArgs->num1 + dummyArgs->num2 * (*dummyArgs->num3));
+  size_t *result = malloc(sizeof(size_t));
+  *result = dummyArgs->num1 + dummyArgs->num2 * (*dummyArgs->num3);
+  return (void *)result;
 }
 
 /*
@@ -54,6 +75,16 @@ static void dummyTaskTest(size_t numTasks) {
   printf("Running task testing...\n\n");
 
   threadPool_t *tp = threadPoolInit(MAX_THREADS);
+  assert(tp != NULL);
+
+  size_t *array = calloc(numTasks, sizeof(size_t));
+  assert(array != NULL);
+
+  doneContext_t ctx = {
+    .remaining = numTasks
+  };
+  pthread_mutex_init(&ctx.lock, NULL);
+  pthread_cond_init(&ctx.done, NULL);
 
   // Try just dummy tasks.
   for (size_t i = 0; i < numTasks; i++) {
@@ -64,10 +95,26 @@ static void dummyTaskTest(size_t numTasks) {
     args->num2 = i + 1;
     args->num3 = malloc(sizeof(int));
     *args->num3 = i + 2; 
-    threadPoolAddTask(tp, dummyTask, (void *)args, dummyFree);
+
+    struct {size_t *slot; doneContext_t *d;} *cbArg = malloc(sizeof(*cbArg));
+    cbArg->slot = &array[i];
+    cbArg->d = &ctx;
+    threadPoolAddTask(tp, dummyTask, (void *)args, dummyFree, dummyCB, cbArg);
+  }
+
+  pthread_mutex_lock(&ctx.lock);
+  while (ctx.remaining != 0) {
+    pthread_cond_wait(&ctx.done, &ctx.lock);
+  }
+  pthread_mutex_unlock(&ctx.lock);
+
+  for (size_t i = 0; i < numTasks; i++) {
+    printf("array[%zu] = %zu\n", i, array[i]);
+    assert(array[i] == (i) + (i + 1) * (i + 2));
   }
 
   threadPoolFree(tp);
+  free(array);
 }
 
 static void runTests() {
