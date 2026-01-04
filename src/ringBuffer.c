@@ -65,7 +65,7 @@ bool ringBufferEmpty(ringBuffer_t *rb) {
   DEBUG_ASSERT(rb != NULL);
   
   pthread_mutex_lock(&rb->lock);
-  bool empty = (rb->size == 0);
+  bool empty = (rb->size == 0UL);
   pthread_mutex_unlock(&rb->lock);
 
   return empty;
