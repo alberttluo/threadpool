@@ -2,8 +2,12 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #define MAX_THREADS (20UL)
+#define MAX_TASKS (10000UL)
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 typedef struct {
   int num1;
@@ -117,16 +121,26 @@ static void dummyTaskTest(size_t numTasks) {
   free(array);
 }
 
-static void runTests() {
-  initTest(MAX_THREADS);
-  dummyTaskTest(100UL);
+static void runTests(size_t threads, size_t tasks) {
+  initTest(MIN(threads, MAX_THREADS));
+  dummyTaskTest(MIN(tasks, MAX_TASKS));
 
   printf("All tests passed!");
   exit(EXIT_SUCCESS);
 }
 
-int main() {
-  runTests(); 
+int main(int argc, char *argv[]) {
+  if (argc != 3) {
+    fprintf(stderr, "Usage: ./test <num_threads> <num_tasks>\n");
+    exit(EXIT_FAILURE);
+  }
+
+  char *endptr;
+
+  size_t threads = strtoul(argv[1], &endptr, 10);
+  size_t tasks = strtoul(argv[2], &endptr, 10);
+
+  runTests(threads, tasks); 
 
   exit(EXIT_SUCCESS);
 }
