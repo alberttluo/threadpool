@@ -26,8 +26,14 @@ void ringBufferFree(ringBuffer_t *rb) {
     return;
   }
 
-  for (size_t i = 0; i < rb->cap; i++) {
-    ((rb->elemFree == NULL) ? free : rb->elemFree)(rb->buffer[i]);
+  for (size_t i = rb->head; i < rb->size; i++) {
+    if (rb->elemFree != NULL) {
+      (rb->elemFree)(rb->buffer[i]);
+    }
+
+    else {
+      free(rb->buffer[i]);
+    }
   }
 
   free(rb->buffer);
@@ -54,6 +60,7 @@ elem_t ringBufferPoll(ringBuffer_t *rb) {
 
   pthread_mutex_lock(&rb->lock);
   elem_t polled = rb->buffer[rb->head];
+  rb->buffer[rb->head] = NULL;
   rb->head = MOD(rb->head + 1, rb->cap);
   rb->size--;
   pthread_mutex_unlock(&rb->lock);

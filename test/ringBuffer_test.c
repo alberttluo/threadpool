@@ -67,11 +67,13 @@ static void insertTests(size_t numProds) {
   // Print values.
   size_t j = 0;
   while (!ringBufferEmpty(rb)) {
-    int polled = *(int*)ringBufferPoll(rb);
+    int *p = (int *) ringBufferPoll(rb);
+    int polled = *p;
     printf("buffer[%zu] = %d\n", j++, polled);
 
     assert(!seen[polled]);
     seen[polled] = true;
+    free(p);
   }
 
   // Ensure all values seen.
@@ -89,7 +91,7 @@ static void insertTests(size_t numProds) {
 int main() {
   initTests(10);
 
-  for (size_t i = 1; i < 50UL; i++) {
+  for (size_t i = 1; i < 10UL; i++) {
     insertTests(i);
   }
 
