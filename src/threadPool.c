@@ -3,6 +3,8 @@
 #include "../inc/config.h"
 #include <stdio.h>
 
+#define MAX_BUFFER_CAP (10000UL)
+
 /*
 * Thread pool worker loop.
 */
@@ -58,7 +60,7 @@ threadPool_t *threadPoolInit(size_t numThreads) {
 
   threadPool_t *tp = xcalloc(1, sizeof(threadPool_t));
   tp->numThreads = numThreads;
-  tp->ringBuffer = ringBufferInit(100, taskFree);
+  tp->ringBuffer = ringBufferInit(MAX_BUFFER_CAP, taskFree);
   tp->state = RUNNING;
   pthread_mutex_init(&tp->threadPoolLock, NULL);
   pthread_cond_init(&tp->hasWork, NULL);
