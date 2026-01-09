@@ -1,12 +1,12 @@
 #ifndef RING_BUFFER_H
 #define RING_BUFFER_H
 
-#include <pthread.h>
+#include "worker.h"
 #include <stdlib.h>
 #include <stdbool.h>
 
-typedef void *elem_t;
-typedef void (*elemFree_func)(elem_t);
+typedef threadPoolTask_t *elem_t;
+typedef void (*elemFree_func)(void *);
 
 typedef struct {
   elem_t         *buffer;

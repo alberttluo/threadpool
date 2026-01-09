@@ -3,33 +3,8 @@
 
 #include <pthread.h>
 #include <stdlib.h>
-#include <stdbool.h>
-
-typedef pthread_t threadWorker_t;
-
-typedef void (*argsFree_func)(void *);
-typedef void *(*task_func)(void *);
-typedef void (*taskCompleteCB_func)(void *result, void *resultObj);
-
-typedef struct {
-  task_func           func;
-  void               *args;
-  argsFree_func       argsFree;
-  taskCompleteCB_func onComplete; 
-  void               *resultObj;
-} threadPoolTask_t;
-
-typedef struct queueNode_struct queueNode_t;
-
-typedef struct queueNode_struct {
-  threadPoolTask_t *task;
-  queueNode_t      *next; 
-} queueNode_t;
-
-typedef struct {
-  queueNode_t *head;
-  queueNode_t *tail;
-} taskQueue_t;
+#include "worker.h"
+#include "ringBuffer.h"
 
 typedef enum {
   RUNNING,
@@ -41,7 +16,7 @@ typedef struct {
   pthread_mutex_t   threadPoolLock;
   pthread_cond_t    hasWork;
   threadWorker_t   *workers;
-  taskQueue_t      *taskQueue;
+  ringBuffer_t     *ringBuffer;
   threadPoolState_t state;
 } threadPool_t;
 
